@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>A Virtual Hug For You 🤗</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      min-height:100vh; display:flex; align-items:center; justify-content:center; overflow-x:hidden;
+      transition: filter .25s ease, transform .25s ease;
+    }
+
+    /* stage effect when modal open */
+    body.staged .hug-container{ filter: blur(4px) saturate(.9) brightness(.9); transform: scale(.98); pointer-events:none }
+
+    .hug-container{
+      text-align:center; padding:40px; background:rgba(255,255,255,.95);
+      border-radius:25px; box-shadow:0 20px 40px rgba(0,0,0,.1);
+      max-width:500px; width:90%; position:relative; backdrop-filter:blur(10px);
+      transition: transform .3s ease, filter .25s ease;
+    }
+    .hug-container:hover{ transform: translateY(-5px) }
+
+    .hug-emoji{ font-size:200px; margin:20px 0; cursor:pointer; transition: transform .3s ease; display:inline-block; animation: float 3s ease-in-out infinite }
+    .hug-emoji:hover{ transform: scale(1.2) }
+    @keyframes float{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+    h1{ color:#333; margin-bottom:20px; font-size:2.5em; font-weight:bold; text-shadow:2px 2px 4px rgba(0,0,0,.1) }
+    .message{ color:#555; font-size:1.2em; line-height:1.6; margin:20px 0 }
+
+    .hug-button{
+      background: linear-gradient(45deg,#ff6b6b,#ee5a24); color:#fff; border:0; padding:15px 30px;
+      font-size:1.1em; border-radius:50px; cursor:pointer; transition: all .3s ease; margin:20px 10px;
+      box-shadow:0 5px 15px rgba(0,0,0,.2); position:relative; overflow:hidden
+    }
+    .hug-button:hover{ transform: translateY(-3px); box-shadow:0 8px 25px rgba(0,0,0,.3) }
+    .hug-button:active{ transform: translateY(0) }
+
+    .hearts{ position:absolute; inset:0; pointer-events:none; overflow:hidden }
+    .heart{ position:absolute; color:#ff6b6b; font-size:60px; animation: heartFloat 10s ease-in-out infinite; opacity:0 }
+    @keyframes heartFloat{
+      0%{ opacity:0; transform: translateY(100px) scale(0) }
+      20%{ opacity:1; transform: translateY(0) scale(1) }
+      80%{ opacity:1; transform: translateY(-50px) scale(1) }
+      100%{ opacity:0; transform: translateY(-100px) scale(0) }
+    }
+
+    .sparkle{ position:absolute; color:#ffd700; font-size:16px; animation: sparkleFloat 3s ease-in-out infinite; opacity:0 }
+    @keyframes sparkleFloat{ 0%,100%{opacity:0; transform:scale(0) rotate(0)} 50%{opacity:1; transform:scale(1) rotate(180deg)} }
+
+    .hug-arms{ font-size:60px; margin:20px; display:inline-block; animation: hugArms 2s ease-in-out infinite }
+    @keyframes hugArms{ 0%,100%{transform:rotate(0)} 50%{transform:rotate(10deg)} }
+
+    .hidden{ display:none }
+    .hug-received{
+      background: linear-gradient(135deg,#ff9a9e 0%,#fecfef 50%,#fecfef 100%);
+      padding:30px; border-radius:20px; margin-top:20px; animation: fadeInScale .5s ease-out
+    }
+    @keyframes fadeInScale{ from{opacity:0; transform:scale(.8)} to{opacity:1; transform:scale(1)} }
+
+    .pulse{ animation: pulse 1.5s ease-in-out infinite }
+    @keyframes pulse{ 0%{transform:scale(1)} 50%{transform:scale(1.05)} 100%{transform:scale(1)} }
+
+    @media (max-width:600px){
+      h1{font-size:2em} .hug-emoji{font-size:80px} .message{font-size:1em} .hug-container{padding:20px}
+    }
+
+    /* ===== Modal (popup) ===== */
+    .overlay{
+      position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+      background: rgba(17,17,17,.55); backdrop-filter: blur(6px);
+      opacity:0; pointer-events:none; transition: opacity .25s ease;
+      z-index: 999;
+    }
+    .overlay.show{ opacity:1; pointer-events:auto }
+    .modal{
+      width:min(560px,92vw); background:#fff; color:#222; border-radius:20px; padding:28px;
+      box-shadow:0 30px 70px rgba(0,0,0,.3);
+      transform: scale(.9); animation: popIn .28s ease forwards;
+      text-align:center; position:relative;
+    }
+    .modal h2{ font-size:1.8rem; margin:8px 0 6px }
+    .modal p{ font-size:1.05rem; color:#444; line-height:1.5 }
+    .modal .emoji{ font-size:72px; margin-bottom:8px }
+    .modal .close{
+      margin-top:16px;
+      background: linear-gradient(45deg,#ff6b6b,#ee5a24); color:#fff; border:0; padding:12px 22px;
+      border-radius:999px; font-weight:700; cursor:pointer
+    }
+    @keyframes popIn{ to{ transform: scale(1) } }
+  </style>
+</head>
+<body>
+  <div class="hearts"></div>
+
+  <div class="hug-container" id="hugContainer">
+    <h1>A Special Hug For You!</h1>
+
+    <div class="hug-emoji" id="hugEmoji">🤗</div>
+
+    <div class="message">
+      A Sri Lankan ARMY wanted to send you the warmest, most caring virtual hug!
+      <br/><br/>
+      (’cause I can’t fly to Korea right now 🥺)
+    </div>
+
+    
+
+    <!-- <div id="hugReceived" class="hidden">
+      <div class="hug-received">
+        <div class="hug-arms">🤲</div>
+        <h2 style="color:#333; margin:15px 0;">BIG WARM HUG</h2>
+        <h2 style="color:#333; margin:15px 0;">따뜻한 포옹</h2>
+        <p style="color:#555; font-size:1.1em; margin-top:15px;">
+          You are loved, appreciated, and absolutely amazing!
+          This hug comes with all the warmth and positive energy in the world! ✨
+        </p>
+        <p style="color:#555; font-size:1.1em; margin-top:15px;">
+          사랑스럽고, 소중하고, 정말 멋진 당신이에요!
+          이 포옹에는 세상의 모든 따뜻함과 긍정적인 에너지가 담겨 있어요! ✨
+        </p>
+      </div>
+    </div> -->
+  </div>
+
+  <!-- Popup / Modal -->
+  <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="popTitle" aria-describedby="popMsg">
+    <div class="modal">
+      <div class="emoji">🤍</div>
+      <h2 id="popTitle">I’m proud of you</h2>
+      <p id="popMsg">
+        a virtual hug from an overseas fan..<br/>
+        해외에서 보내는 따뜻한 응원의 포옹이에요 💖
+      </p>
+      <button class="close" onclick="closeModal()">Receive Hug</button>
+    </div>
+  </div>
+
+  <script>
+    function sendHug() {
+      const hugContainer = document.getElementById('hugContainer');
+      const hugReceived = document.getElementById('hugReceived');
+      const hugEmoji = document.getElementById('hugEmoji');
+
+      hugEmoji.classList.add('pulse');
+      createFloatingHearts();
+      createSparkles();
+
+      setTimeout(() => {
+        hugReceived.classList.remove('hidden');
+        hugContainer.style.background = 'rgba(255, 255, 255, 0.98)';
+      }, 500);
+
+      setTimeout(() => { hugEmoji.classList.remove('pulse'); }, 5000);
+    }
+
+    function createFloatingHearts() {
+      const heartsContainer = document.querySelector('.hearts');
+      const heartSymbols = ['❤️','💝','💖','💕','🧡','💛','💚','💙','💜'];
+      for (let i = 0; i < 15; i++) {
+        setTimeout(() => {
+          const heart = document.createElement('div');
+          heart.className = 'heart';
+          heart.textContent = heartSymbols[Math.floor(Math.random()*heartSymbols.length)];
+          heart.style.left = Math.random()*100 + '%';
+          heart.style.animationDelay = Math.random()*2 + 's';
+          heartsContainer.appendChild(heart);
+          setTimeout(() => heart.remove(), 4000);
+        }, i*200);
+      }
+    }
+
+    function createSparkles() {
+      const hugContainer = document.getElementById('hugContainer');
+      const sparkleSymbols = ['✨','⭐','🌟','💫','⚡'];
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+          const sparkle = document.createElement('div');
+          sparkle.className = 'sparkle';
+          sparkle.textContent = sparkleSymbols[Math.floor(Math.random()*sparkleSymbols.length)];
+          sparkle.style.left = (Math.random()*80 + 10) + '%';
+          sparkle.style.top  = (Math.random()*80 + 10) + '%';
+          sparkle.style.animationDelay = Math.random() * 1 + 's';
+          hugContainer.appendChild(sparkle);
+          setTimeout(() => sparkle.remove(), 3000);
+        }, i*300);
+      }
+    }
+
+    // ===== Modal controls =====
+    function showModal() {
+      document.body.classList.add('staged');
+      document.getElementById('overlay').classList.add('show');
+    }
+    function closeModal() {
+      const overlay = document.getElementById('overlay');
+      overlay.classList.remove('show');
+      document.body.classList.remove('staged');
+
+      // trigger the hug reveal after closing the popup
+      setTimeout(() => sendHug(), 500);
+    }
+
+    // auto-open popup on load (staging the background)
+    window.addEventListener('load', () => {
+      showModal();
+      // optional: ambient sparkles while staged
+      setTimeout(createSparkles, 800);
+    });
+  </script>
+</body>
+</html>
